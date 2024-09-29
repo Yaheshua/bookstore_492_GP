@@ -5,6 +5,7 @@ import BuyBook
 import BookInformationPage
 import Message
 
+#user pages GUI setup and classes related to user
 
 class UserPage(object):
     def __init__(self, root, color, font, dbConnection, userInfo):
@@ -130,3 +131,128 @@ class LogOutFrame(object):
         for child in self.parent.winfo_children():
             child.destroy()
         self.parent.destroy()
+
+
+class BuyedBooks(object):
+    def __init__(self, root, width, height, color, font, dbConnection,
+                 userInfo):
+
+        self.root = root
+        self.width = width
+        self.height = height
+        self.color = color
+        self.font = font
+        self.dbConnection = dbConnection
+        self.userInfo = userInfo
+
+        self.gui_init()
+
+    def gui_init(self):
+
+        frame_up = Frame(
+            self.root,
+            cursor='hand1',
+            bg=self.color,
+            width=self.width,
+            height=self.height * 1 / 12)
+        frame_up.grid_propagate(0)
+        frame_up.pack(side=TOP, expand=True, fill=BOTH)
+
+        frame_middle = Frame(
+            self.root,
+            cursor='hand1',
+            bg=self.color,
+            width=self.width,
+            height=self.height * 10 / 12)
+        frame_middle.grid_propagate(0)
+        frame_middle.pack(side=TOP, expand=True, fill=BOTH)
+
+        frame_down = Frame(
+            self.root,
+            cursor='hand1',
+            bg=self.color,
+            width=self.width,
+            height=self.height * 1 / 12)
+        frame_down.grid_propagate(0)
+        frame_down.pack(side=TOP, expand=True, fill=BOTH)
+
+        self.uploadedFilesLabel = Label(
+            frame_up, text="BuyedBooks", font=self.font, bg=self.color)
+        self.uploadedFilesLabel.place(relx=0.5, rely=0.5, anchor='center')
+
+        self.booksDisplay = ttk.Treeview(
+            frame_middle,
+            columns=('#1', '#2', '#3', '#4', '#5'),
+            height=20,
+            show='headings',
+            padding=(1, 1, 1, 1))
+
+        self.booksDisplay.heading('#1', text='Title')
+        self.booksDisplay.heading('#2', text='Author')
+        self.booksDisplay.heading('#3', text='Genre')
+        self.booksDisplay.heading('#4', text='Quantity')
+        self.booksDisplay.heading('#5', text='Review Score')
+        self.booksDisplay.column('#1', stretch=True, width=self.width / 5)
+        self.booksDisplay.column('#2', stretch=True, width=self.width / 5)
+        self.booksDisplay.column('#3', stretch=True, width=self.width / 5)
+        self.booksDisplay.column('#4', stretch=True, width=self.width / 5)
+        self.booksDisplay.column('#5', stretch=True, width=self.width / 5)
+
+        self.booksDisplay.pack(side=TOP, fill=BOTH, expand=True)
+        #self.booksDisplay.grid(row=5, columnspan=4, sticky='nw')
+        #self.booksDisplay.place(relx=0.5, rely=0.5, anchor='center')
+
+        self.booksDisplayStyle = ttk.Style()
+        self.booksDisplayStyle.configure(
+            "Treeview", font=self.font, rowheight=50)
+        self.booksDisplayStyle.configure("Treeview.Heading", font=self.font)
+
+        #bind treeview to mouse click
+
+        self.booksDisplay.bind("<ButtonRelease-1>", self.__bookInfo)
+
+        self.booksDisplay.tag_configure(
+            "tagBook", background="white", foreground="red", font=self.font)
+
+        self.addNewBookButton = Button(
+            frame_down, text="Buy new book", font=self.font)
+        self.addNewBookButton.place(relx=0.5, rely=0.5, anchor='center')
+
+        self.addNewBookButton.bind("<Button-1>", self.__buyNewBook)
+
+        self.__display_availableBooks()
+
+    def __buyNewBook(self, event):
+
+        new_window = Toplevel(self.root)
+        BuyBook.BuyBook(new_window, self.color, self.font, self.dbConnection,
+                        self.userInfo)
+        new_window.wait_window()
+        self.__display_availableBooks()
+
+    def __bookInfo(self, event):
+
+        selectedItem = self.booksDisplay.focus()
+        valueItem = self.booksDisplay.item(selectedItem)['values']
+        bookName=valueItem[0]
+        new_window = Toplevel(self.root)
+        newBookInfo = BookInformationPage.BookInformation(
+            new_window, self.color, self.dbConnection,  valueItem[0], self.userInfo)
+        new_window.wait_window()
+        self.__display_availableBooks()
+
+    def __display_availableBooks(self):
+
+        for child in self.booksDisplay.get_children():
+            self.booksDisplay.delete(child)
+
+        cursor = self.dbConnection.cursor()
+
+        args = (self.userInfo['userName'], )
+        cursor.callproc('getUsersBooks', args)
+        for result in cursor.stored_results():
+            books = result.fetchall()
+            for book in books:
+                self.booksDisplay.insert(
+                    '', 'end', values=book, tags='tagBook')
+        cursor.close()

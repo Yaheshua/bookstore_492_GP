@@ -3,6 +3,7 @@ import AdminPage
 import UserPage
 import Message
 
+#Login procedures file
 
 class LoginFrame(object):
     '''
@@ -68,3 +69,49 @@ class LoginFrame(object):
         self.loginButton.bind("<Button-1>", self.__loginAction)
         self.loginButton.grid(row=2, column=0, columnspan=2, padx=2, pady=2)
 
+    def __loginAction(self, event):
+        '''
+        This method is called when the "Login" button is pressed
+        It checks if the administrator credentials are used or if
+        the user that tries to connect exists in the database.
+        '''
+
+        username = self.userNameEntry.get()
+        password = self.passwordEntry.get()
+
+        if username == self.adminCredentials[0]:
+            if password == self.adminCredentials[1]:
+                AdminPage.AdminPage(self.parent, self.color, self.font,
+                                    self.dbConnection)
+            else:
+                self.__incorectUP()
+        else:
+            cursor = self.dbConnection.cursor()
+
+            args = (username, None, None, None, None)
+            result = cursor.callproc('log_in', args)
+            cursor.close()
+
+            if result[1] is None:
+                self.__incorectUP()
+            elif password != result[4]:
+                self.__incorectUP()
+            else:
+                print(result)
+                userInfo = {
+                    'userName': result[0],
+                    'firstName': result[1],
+                    'familyName': result[2],
+                    'email': result[3]
+                }
+                print(userInfo)
+                UserPage.UserPage(self.parent, self.color, self.font,
+                                  self.dbConnection, userInfo)
+
+    def __incorectUP(self):
+        '''
+        Pop a message stating that the Username/Password is incorrect.
+        '''
+        new_window = Toplevel(self.root)
+        Message.Message(new_window, self.color, "Username/Password Incorect")
+        new_window.wait_window()

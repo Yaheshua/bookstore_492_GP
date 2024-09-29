@@ -1,9 +1,10 @@
 from tkinter import *
 
+# methods for testing functions
 
-database= Database()
+#database= Database()
 
-window = Tk()
+#window = Tk()
 
 # Account Class
 class Account():

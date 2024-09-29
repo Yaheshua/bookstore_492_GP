@@ -6,6 +6,8 @@ USE bookStoreDB;
 DROP TABLE IF EXISTS Books;
 DROP TABLE IF EXISTS Users;
 DROP TABLE IF EXISTS Reviews;
+DROP TABLE IF EXISTS BuyedBooks;
+DROP TABLE IF EXISTS ReviewedBooks;
 
 
 CREATE TABLE Books(
@@ -40,3 +42,46 @@ CREATE TABLE Reviews(
 	PRIMARY KEY (reviewId)
 );
 
+CREATE TABLE BuyedBooks(
+	userId INT NOT NULL,
+	bookId INT NOT NULL,
+	quantity INT NOT NULL,
+	PRIMARY KEY (userId, bookId),
+
+	FOREIGN KEY (userId)
+		REFERENCES Users(userId)
+		ON DELETE CASCADE,
+
+	FOREIGN KEY (bookId)
+		REFERENCES Books(bookId)
+		ON DELETE CASCADE
+);
+
+CREATE TABLE ReviewedBooks(
+	reviewId INT NOT NULL,
+	bookId INT NOT NULL,
+	userId INT NOT NULL,
+	score DOUBLE NOT NULL,
+	PRIMARY KEY (reviewId),
+
+
+	FOREIGN KEY (reviewId)
+		REFERENCES Reviews(reviewId)
+		ON DELETE CASCADE,
+
+	FOREIGN KEY (bookId)
+		REFERENCES Books(bookId)
+		ON DELETE CASCADE,
+
+	FOREIGN KEY (userId)
+		REFERENCES Users(userId)
+		ON DELETE CASCADE
+
+);
+
+-- dummy examples
+INSERT INTO Books (title, genre, author, published_year, stock, price) VALUES ('Harry Potter & The Sorcerers Stone', 'Fiction', 'J. K. Rowling' , '2001', 5, 11.95);
+INSERT INTO Books (title, genre, author, published_year, stock, price) VALUES ('The Great Gatsby', 'Romance', 'F Scott Fitzgerald', '1920', 3, 10.95);
+INSERT INTO Books (title, genre, author, published_year, stock, price) VALUES ('100km to Death', 'Science Fiction', 'Issac Asimov', '2013', 5, 14.95);
+INSERT INTO Books (title, genre, author, published_year, stock, price) VALUES ('Love in time of cholera', 'Drama', 'G. Garcia Marquez', '1960', 5, 13.95);
+INSERT INTO Books (title, genre, author, published_year, stock, price) VALUES ('Dark Matters', 'Children Fiction', 'P. Pullman', '2015', 5, 12.95);

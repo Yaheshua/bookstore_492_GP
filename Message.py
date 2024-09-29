@@ -1,6 +1,6 @@
 from tkinter import *
 
-#Creation of the message class and it's functions
+#Creation of the message class and it's functions and adding params
 class Message(object):
     def __init__(self, root, color, message):
 
@@ -42,3 +42,29 @@ class Message(object):
             width=self.width)
         topFrame.grid_propagate(0)
         topFrame.pack(expand=True, fill=BOTH, side=TOP)
+
+        downFrame = Frame(
+            self.frame,
+            cursor='hand1',
+            bg=self.color,
+            height=self.height  * 2 / 10,
+            width=self.width)
+        downFrame.grid_propagate(0)
+        downFrame.pack(expand=True, fill=BOTH, side=TOP)
+
+
+        messageLabel = Label(
+            topFrame, text=self.message, font=self.font, bg=self.color)
+        messageLabel.place(relx=0.5, rely=0.5, anchor='center')
+
+        #creating login button
+        okButton = Button(downFrame, text="OK", font=('Times', 20, 'roman'))
+        okButton.bind("<Button-1>", self.__ok)
+        okButton.place(relx=0.5, rely=0.5, anchor='center')
+
+    def __ok(self, event):
+
+        for child in self.root.winfo_children():
+            child.destroy()
+        self.root.destroy()
+

@@ -4,6 +4,7 @@ from tkinter import ttk
 import AddReview
 import Message
 
+#Book information classes and related functions and variables
 
 class BookInformation(object):
     def __init__(self, root, color, dbConnection, bookName, userInfo):
@@ -93,3 +94,84 @@ class BookInformation(object):
             fg='red')
         bookProfileLabel.place(relx=0.5, rely=0.5, anchor='center')
 
+
+ def __initReviews(self, frame):
+
+        self.reviewsDisplay = ttk.Treeview(
+            frame, columns=('#1', '#2'), height=10, show='headings')
+
+        self.reviewsDisplay.heading('#1', text='Reviewer')
+        self.reviewsDisplay.heading('#2', text='Score')
+        self.reviewsDisplay.column('#1', stretch=True, width=self.width / 4)
+        self.reviewsDisplay.column('#2', stretch=True, width=self.width / 4)
+
+        self.reviewsDisplay.grid_propagate(0)
+        self.reviewsDisplay.pack(side=TOP, expand=True, fill=BOTH)
+
+        #reviewsDisplayStyle = ttk.Style()
+
+        #reviewsDisplayStyle.configure("Treeview", font=self.font, rowheight=50)
+        #reviewsDisplayStyle.configure("Treeview.Heading", font=self.font)
+
+        #reviewsDisplay.grid(row=5,columnspan=5, sticky='')
+
+        self.reviewsDisplay.tag_configure(
+            "tagReview",
+            background="white",
+            foreground="green",
+            font=self.font)
+
+        self.reviewsDisplay.bind("<ButtonRelease-1>", self.__showReview)
+
+        self.__displayAvailableReviews()
+
+    def __initAddReviewButton(self, frame):
+        addReviewButton = Button(
+            frame, text="Add review", font=self.font, borderwidth=5)
+        addReviewButton.place(relx=0.5, rely=0.5, anchor='center')
+
+        addReviewButton.bind("<Button-1>", self.__addReview)
+
+    def _getBookInformation(self):
+
+        args = (self.bookName, )
+        cursor = self.dbConnection.cursor()
+        cursor.callproc('getBookInfo', args)
+        for result in cursor.stored_results():
+            book = result.fetchall()
+            book_info = map(str, book[0])
+            book_info = "\n".join(book_info)
+
+        cursor.close()
+        return book_info
+
+    def __addReview(self, event):
+
+        new_window = Toplevel(self.root)
+        AddReview.AddReview(new_window, self.color, self.font,
+                                        self.dbConnection, self.userName,
+                                        self.bookName)
+        new_window.wait_window()
+        self.__displayAvailableReviews()
+
+    def __showReview(self, event):
+
+        selectedItem = event.widget.focus()
+        itemValue = event.widget.item(selectedItem)
+
+        print(itemValue['values'][0], itemValue['values'][1])
+
+    def __displayAvailableReviews(self):
+
+        for child in self.reviewsDisplay.get_children():
+            self.reviewsDisplay.delete(child)
+
+        args = (self.bookName, )
+        cursor = self.dbConnection.cursor()
+        cursor.callproc('getBookReviews', args)
+        for result in cursor.stored_results():
+            reviews = result.fetchall()
+            for review in reviews:
+                self.reviewsDisplay.insert(
+                    '', 'end', values=review, tags='tagReview')
+        cursor.close()

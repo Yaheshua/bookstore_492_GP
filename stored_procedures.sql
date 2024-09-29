@@ -139,3 +139,129 @@ BEGIN
 		WHERE b.bookId = bb.bookId
 			AND bb.userId = idUser ;
 END$$
+
+
+DROP PROCEDURE IF EXISTS buyBook$$
+
+CREATE PROCEDURE buyBook(
+	IN bookName VARCHAR(30),
+	IN userNm VARCHAR(30)
+)
+
+BEGIN
+
+	DECLARE nrBooks INT;
+	DECLARE idBook INT;
+	DECLARE idUser INT;
+
+	SELECT userId INTO idUser FROM Users WHERE userName = userNm;
+	SELECT bookId INTO idBook FROM Books WHERE title = bookName;
+
+
+	SELECT IFNULL(count(*), 0) INTO nrBooks 
+		FROM BuyedBooks 
+		WHERE userId = idUser
+			AND bookId = idBook;
+		
+	IF nrBooks = 0
+	THEN
+		INSERT INTO BuyedBooks(userId, bookId, quantity)
+			VALUES (idUser, idBook, 1);
+	ELSE
+		UPDATE BuyedBooks SET quantity = quantity + 1
+			WHERE userId = idUser
+				AND bookId = idBook;
+	END IF;
+
+END$$
+
+
+
+DROP PROCEDURE IF EXISTS getBookInfo$$
+
+CREATE PROCEDURE getBookInfo(IN bookName VARCHAR(30))
+
+BEGIN
+	SELECT title, author, genre, published_year, price, bookScore(bookId)
+		FROM Books 
+		WHERE title = bookName;
+END$$
+
+
+
+DROP PROCEDURE IF EXISTS getBookReviews$$
+
+CREATE PROCEDURE getBookReviews(IN bookName VARCHAR(30))
+BEGIN
+	DECLARE idBook INT;
+
+	SELECT bookId INTO idBook FROM Books WHERE title=bookName;
+
+	SELECT u.userName, bb.score 
+		FROM ReviewedBooks bb, Users u
+		WHERE bb.bookId = idBook
+			AND bb.userId = u.userId;
+
+END$$
+
+
+
+DROP PROCEDURE IF EXISTS insertReview$$
+
+CREATE PROCEDURE insertReview(
+	IN uName VARCHAR(30),
+	IN bookName VARCHAR(30),
+	IN uScore DOUBLE,
+	IN uReview VARCHAR(100) )
+
+BEGIN
+	DECLARE idBook INT;
+	DECLARE idUser INT;
+	DECLARE idReview INT;
+
+	SELECT bookId INTO idBook FROM Books WHERE title=bookName;
+	SELECT userId INTO idUser FROM Users WHERE userName=uName;
+
+	INSERT INTO Reviews(reviewText)
+		VALUES (uReview);
+
+	SELECT reviewId INTO idReview FROM Reviews WHERE  reviewText=uReview;
+
+
+	INSERT INTO ReviewedBooks(reviewId, bookId, userId, score)
+		VALUES(idReview, idBook, idUser, uScore);
+
+
+END$$
+
+
+
+DROP TRIGGER IF EXISTS updateStock1$$
+
+
+CREATE TRIGGER updateStock1
+	AFTER UPDATE ON BuyedBooks FOR EACH ROW
+BEGIN
+	
+	UPDATE Books SET stock = stock - 1
+		WHERE bookId = NEW.bookId;
+
+END$$
+
+
+DROP TRIGGER IF EXISTS updateStock2$$
+
+
+CREATE TRIGGER updateStock2
+	AFTER INSERT ON BuyedBooks FOR EACH ROW
+BEGIN
+	
+	UPDATE Books SET stock = stock - 1
+		WHERE bookId = NEW.bookId;
+
+END$$
+
+
+
+DELIMITER ;
+

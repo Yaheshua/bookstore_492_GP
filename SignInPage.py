@@ -2,7 +2,7 @@ from tkinter import *
 from LogInPage import *
 import Message
 
-#Creating sign in page class
+#Creating sign in page classes and fn's +sign in procedure 
 class SignInPage(object):
     def __init__(self, parent, root, height, width, side, color, dbConnection):
 
@@ -69,3 +69,68 @@ class SignInPage(object):
         self.bankingCardLabel = Label(
             int_frame, text="Banking Card Nr", font=self.font, bg=self.color)
         self.bankingCardLabel.grid(row=6, column=0, sticky=W, padx=2, pady=2)
+
+        #creating entries
+        self.userNameEntry = Entry(int_frame, font=self.font)
+        self.userNameEntry.grid(row=1, column=1, padx=2, pady=2)
+
+        self.firstNameEntry = Entry(int_frame, font=self.font)
+        self.firstNameEntry.grid(row=2, column=1, padx=2, pady=2)
+
+        self.lastNameEntry = Entry(int_frame, font=self.font)
+        self.lastNameEntry.grid(row=3, column=1, padx=2, pady=2)
+
+        self.emailEntry = Entry(int_frame, font=self.font)
+        self.emailEntry.grid(row=4, column=1, padx=2, pady=2)
+
+        self.passwordEntry = Entry(int_frame, show="*", font=self.font)
+        self.passwordEntry.grid(row=5, column=1, padx=2, pady=2)
+
+        self.CreditCardNumberEntry = Entry(int_frame, show="*", font=self.font)
+        self.CreditCardNumberEntry.grid(row=6, column=1, padx=2, pady=2)
+
+        #creating register button
+        self.registerButton = Button(
+            int_frame, text="Register New User", font=32)
+        self.registerButton.bind("<Button-1>", self.__registerAction)
+        self.registerButton.grid(row=7, columnspan=2, padx=2, pady=2)
+
+    def __registerAction(self, event):
+
+        userName = self.userNameEntry.get()
+        firstName = self.firstNameEntry.get()
+        lastName = self.lastNameEntry.get()
+        email = self.emailEntry.get()
+        password = self.passwordEntry.get()
+        creditCard = self.CreditCardNumberEntry.get()
+        self.__deleteText()
+        args = (userName, None, None, None, None)
+        cursor = self.dbConnection.cursor()
+        result = cursor.callproc('log_in', args)
+
+        if result[1] is not None:
+            self.__message("Username exists")
+        else:
+            args = (userName, firstName, lastName, email, creditCard, password)
+            result = cursor.callproc('add_new_user', args)
+            self.dbConnection.commit()
+            self.__message("Registerd successfully")
+        cursor.close()
+
+
+
+    def __message(self, message):
+        new_window = Toplevel(self.root)
+        Message.Message(new_window, self.color, message)
+        new_window.wait_window()
+
+    def __deleteText(self):
+
+        self.userNameEntry.delete(0, 'end')
+        self.firstNameEntry.delete(0, 'end')
+        self.lastNameEntry.delete(0, 'end')
+        self.emailEntry.delete(0, 'end')
+        self.passwordEntry.delete(0, 'end')
+        self.CreditCardNumberEntry.delete(0, 'end')
+
+
